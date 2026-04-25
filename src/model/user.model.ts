@@ -7,7 +7,6 @@ export enum GenderType {
 export enum RoleType {
     user="user",
     admin="admin",
-    superAdmin = "superAdmin"
 }
 export enum ProviderType{
     system="system",
@@ -21,13 +20,10 @@ export interface IUser{
     email:string,
     password:string,
     age:number,
-    image?:string,
     provider:ProviderType,
     phone?:string,
     address?:string,
     gender:GenderType,
-    profileImage?:string,
-    tempProfileImage?:string,
     role?:RoleType,
     otp?:string,
     deletedAt?:Date,
@@ -35,10 +31,9 @@ export interface IUser{
     restoredAt?:Date,
     restoredBy?:Types.ObjectId,
     confirmed?:boolean,
-    isTwoFAEnabled?:boolean,
     changCredentials?:Date,
+    isTwoFAEnabled?:boolean,
     loginOtp?:string,
-    friends?:Types.ObjectId[],
     loginOtpExpiry?:Date,
     createdAt:Date,
     updatedAt:Date
@@ -54,20 +49,16 @@ const userSchema =new mongoose.Schema<IUser>({
     age:{type:Number,min:18,required:function(){
         return this.provider===ProviderType.google?false:true
     }},
-    friends:[{type:Types.ObjectId,ref:"User"}],
     phone:{type:String},
-    isTwoFAEnabled: { type: Boolean, default: false },
     loginOtp: { type: String },                       
     loginOtpExpiry: { type: Date },
     deletedAt:{type:Date},
     deletedBy:{type:Types.ObjectId,ref:"User"},
     restoredAt:{type:Date},
+    isTwoFAEnabled: { type: Boolean, default: false },
     restoredBy:{type:Types.ObjectId,ref:"User"},
-    profileImage:{type:String},
-    tempProfileImage:{type:String},
     address:{type:String},
     otp:{type:String},
-    image:{type:String},
     provider:{type:String,enum:ProviderType,default:ProviderType.system},
     confirmed:{type:Boolean},
     changCredentials:{type:Date},

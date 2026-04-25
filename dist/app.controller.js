@@ -12,11 +12,8 @@ const express_rate_limit_1 = require("express-rate-limit");
 const classError_1 = require("./utils/classError");
 const user_controller_1 = __importDefault(require("./modules/users/user.controller"));
 const connectionDB_1 = __importDefault(require("./DB/connectionDB"));
-const post_controller_1 = __importDefault(require("./modules/posts/post.controller"));
-const geteway_1 = require("./modules/geteway/geteway");
-const express_2 = require("graphql-http/lib/use/express");
-const chat_controller_1 = __importDefault(require("./modules/chats/chat.controller"));
-const schema_ggl_1 = require("./modules/graphql/schema.ggl");
+const device_controller_1 = __importDefault(require("./modules/device/device.controller"));
+const order_controller_1 = __importDefault(require("./modules/oreders/order.controller"));
 (0, dotenv_1.config)({ path: (0, path_1.resolve)("./config/.env") });
 const app = (0, express_1.default)();
 const port = process.env.PORT || 5000;
@@ -35,10 +32,9 @@ const bootStrap = async () => {
     app.use((0, helmet_1.default)());
     app.use(limiter);
     app.use("/users", user_controller_1.default);
-    app.use("/posts", post_controller_1.default);
-    app.use("/chat", chat_controller_1.default);
+    app.use("/devices", device_controller_1.default);
+    app.use("/orders", order_controller_1.default);
     await (0, connectionDB_1.default)();
-    app.all("/graphql", (0, express_2.createHandler)({ schema: schema_ggl_1.schemaGQL, context: (req) => ({ req }) }));
     app.use("{/*demo}", (req, res, next) => {
         throw new classError_1.AppError(`invalid url ${req.originalUrl}`, 404);
     });
@@ -48,6 +44,5 @@ const bootStrap = async () => {
     const httpServer = app.listen(port, () => {
         console.log(`server is running on port ${port}!`);
     });
-    (0, geteway_1.initialzationio)(httpServer);
 };
 exports.default = bootStrap;

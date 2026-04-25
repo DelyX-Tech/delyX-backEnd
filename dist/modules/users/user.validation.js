@@ -3,11 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.upDateEmailSchema = exports.getOneUserSchema = exports.upDatePasswordSchema = exports.freezeAccountSchema = exports.resetPasswordSchema = exports.forgetPasswordSchema = exports.loginWithGmailSchema = exports.logoutSchema = exports.confirmEmailSchema = exports.signUpSchema = exports.signInSchema = exports.flagType = void 0;
+exports.upDateEmailSchema = exports.upDatePasswordSchema = exports.freezeAccountSchema = exports.resetPasswordSchema = exports.forgetPasswordSchema = exports.logoutSchema = exports.confirmEmailSchema = exports.signUpSchema = exports.signInSchema = exports.flagType = void 0;
 const zod_1 = __importDefault(require("zod"));
 const user_model_1 = require("../../model/user.model");
 const mongoose_1 = require("mongoose");
-const generalRules_1 = require("../../utils/generalRules");
 var flagType;
 (function (flagType) {
     flagType["all"] = "all";
@@ -42,11 +41,6 @@ exports.confirmEmailSchema = {
 exports.logoutSchema = {
     body: zod_1.default.strictObject({
         flag: zod_1.default.enum(flagType)
-    }).required()
-};
-exports.loginWithGmailSchema = {
-    body: zod_1.default.strictObject({
-        idToken: zod_1.default.string(),
     }).required()
 };
 exports.forgetPasswordSchema = {
@@ -84,9 +78,6 @@ exports.upDatePasswordSchema = {
         newPassword: zod_1.default.string()
     }).required()
 };
-exports.getOneUserSchema = zod_1.default.strictObject({
-    id: generalRules_1.generalRules.id
-});
 exports.upDateEmailSchema = {
     body: zod_1.default.strictObject({
         oldEmail: zod_1.default.email(),

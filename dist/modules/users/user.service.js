@@ -47,28 +47,9 @@ const token_1 = require("../../utils/token");
 const uuid_1 = require("uuid");
 const revok_repository_1 = require("../../DB/repositories/revok.repository");
 const revok_Token_1 = __importDefault(require("../../model/revok.Token"));
-const google_auth_library_1 = require("google-auth-library");
-const s3_config_1 = require("../../utils/s3.config");
-const node_util_1 = require("node:util");
-const node_stream_1 = require("node:stream");
-const post_repository_copy_1 = require("../../DB/repositories/post.repository copy");
-const post_model_1 = __importDefault(require("../../model/post.model"));
-const sendRequest_model_1 = __importDefault(require("../../model/sendRequest.model"));
-const friendRequest_repository_1 = require("../../DB/repositories/friendRequest.repository");
-const mongoose_1 = require("mongoose");
-const chat_repository_1 = require("../../DB/repositories/chat.repository");
-const chat_model_1 = __importDefault(require("../../model/chat.model"));
-const graphql_1 = require("graphql");
-const authentication_1 = require("../../middleware/authentication");
-const authorization_1 = require("../../middleware/authorization");
-const validation_1 = require("../../middleware/validation");
-const writePipeLine = (0, node_util_1.promisify)(node_stream_1.pipeline);
 class UserService {
     _userModel = new user_repository_1.UserRepository(user_model_1.default);
     _revokToken = new revok_repository_1.RevokTokenRepository(revok_Token_1.default);
-    _postModel = new post_repository_copy_1.postRepository(post_model_1.default);
-    _friendRequestModel = new friendRequest_repository_1.FriendRequestRepository(sendRequest_model_1.default);
-    _chatModel = new chat_repository_1.ChatRepository(chat_model_1.default);
     constructor() { }
     signUp = async (req, res, next) => {
         let { userName, email, password, cPassword, gender, address, age, phone } = req.body;
@@ -125,20 +106,6 @@ class UserService {
         });
         return res.status(200).json({ message: "welcome", access_token, refresh_token });
     };
-    getProfile = async (req, res, next) => {
-        const user = await this._userModel.findOne({ _id: req?.user?._id }, undefined, {
-            populate: [{
-                    path: "friends"
-                }]
-        });
-        const groups = await this._chatModel.find({
-            filter: {
-                participants: { $in: [req?.user?._id] },
-                group: { $exists: true }
-            }
-        });
-        return res.status(200).json({ message: "success", user: req.user });
-    };
     logout = async (req, res, next) => {
         const { flag } = req.body;
         if (flag === user_validation_1.flagType.all) {
@@ -162,49 +129,6 @@ class UserService {
         const refresh_token = await (0, token_1.GenerateToken)({
             payload: { id: req?.user?._id, email: req?.user?.email },
             signature: req?.user?.role == user_model_1.RoleType.user ? process.env.REFRESH_TOKEN_USER : process.env.REFRESH_TOKEN_ADMIN,
-            options: { expiresIn: "1y", jwtid }
-        });
-        await this._revokToken.create({
-            tokenId: req.decoded?.jti,
-            userId: req.user?._id,
-            expireAt: new Date(req.decoded?.exp * 1000)
-        });
-        return res.status(200).json({ message: "welcome", access_token, refresh_token });
-    };
-    loginWithGmail = async (req, res, next) => {
-        const { idToken } = req.body;
-        const client = new google_auth_library_1.OAuth2Client();
-        async function verify() {
-            const ticket = await client.verifyIdToken({
-                idToken,
-                audience: process.env.WEB_CLIENT_ID,
-            });
-            const payload = ticket.getPayload();
-            return payload;
-        }
-        const { email, email_verified, picture, name } = await verify();
-        let user = await this._userModel.findOne({ email });
-        if (!user) {
-            user = await this._userModel.create({
-                email: email,
-                image: picture,
-                userName: name,
-                confirmed: email_verified,
-                provider: user_model_1.ProviderType.google
-            });
-        }
-        if (user?.provider === user_model_1.ProviderType.system) {
-            throw new classError_1.AppError("please login on system");
-        }
-        const jwtid = (0, uuid_1.v4)();
-        const access_token = await (0, token_1.GenerateToken)({
-            payload: { id: user._id, email: user.email },
-            signature: user?.role == user_model_1.RoleType.user ? process.env.ACCESS_TOKEN_USER : process.env.ACCESS_TOKEN_ADMIN,
-            options: { expiresIn: 60 * 60, jwtid }
-        });
-        const refresh_token = await (0, token_1.GenerateToken)({
-            payload: { id: user._id, email: user.email },
-            signature: user?.role == user_model_1.RoleType.user ? process.env.REFRESH_TOKEN_USER : process.env.REFRESH_TOKEN_ADMIN,
             options: { expiresIn: "1y", jwtid }
         });
         return res.status(200).json({ message: "welcome", access_token, refresh_token });
@@ -234,93 +158,6 @@ class UserService {
         await this._userModel.updateOne({ email: user?.email }, { password: hash, $unset: { otp: "" } });
         return res.status(200).json({ message: "success" });
     };
-    uploadImage = async (req, res, next) => {
-        const { originalname, ContentType } = req.body;
-        const { url, Key } = await (0, s3_config_1.createUpliadFilePreSignUrl)({
-            originalname,
-            ContentType,
-            path: `users/${req.user?._id}/coverImage`
-        });
-        const user = await this._userModel.findOneAndUpdate({
-            _id: req.user?._id
-        }, {
-            profileImage: Key,
-            tempProfileImage: req.user?.profileImage
-        });
-        if (!user) {
-            throw new classError_1.AppError("user not found", 404);
-        }
-        event_1.eventEmitter.emit("UploadProfileImage", { userId: req.user?._id, oldKey: req.user?.profileImage, Key, expiresIn: 60 });
-        return res.status(200).json({ message: "success", user, url });
-    };
-    getfile = async (req, res, next) => {
-        const { path } = req.params;
-        const { downloadName } = req.query;
-        const Key = path.join("/");
-        const result = await (0, s3_config_1.getFile)({
-            Key
-        });
-        const stream = result.Body;
-        stream.pipe(res);
-        res.setHeader("Content-Type", result?.ContentType);
-        if (downloadName) {
-            res.setHeader("Content-Disposition", `attachment;filename${downloadName || path.join("/").split("/").pop()}`);
-        }
-        await writePipeLine(stream, res);
-        return res.status(200).json({ message: "success", result });
-    };
-    creatFile = async (req, res, next) => {
-        const { path } = req.params;
-        const Key = path.join("/");
-        const { downloadName } = req.query;
-        const url = await (0, s3_config_1.createGetFileSignedUrl)({
-            Key,
-            downloadName: downloadName ? downloadName : undefined
-        });
-        return res.status(200).json({ message: "success", url });
-    };
-    deletefile = async (req, res, next) => {
-        const { path } = req.params;
-        const Key = path.join("/");
-        const url = await (0, s3_config_1.deleteFile)({
-            Key,
-        });
-        return res.status(200).json({ message: "success", url });
-    };
-    deletefiles = async (req, res, next) => {
-        const { path } = req.params;
-        const Key = path.join("/");
-        const url = await (0, s3_config_1.deleteFiles)({
-            urls: [
-                "socialmediaApp/users/68cf0c47191f79cdc7fee5ee/545fd7fd-3cdf-4b03-a145-8c0f45f75918_Screenshot 2025-07-27 221230.png"
-            ]
-        });
-        return res.status(200).json({ message: "success", url });
-    };
-    listfile = async (req, res, next) => {
-        let result = await (0, s3_config_1.listFiles)({
-            path: "users/68cf0c47191f79cdc7fee5ee"
-        });
-        if (!result?.Contents) {
-            throw new classError_1.AppError("not found", 404);
-        }
-        result = result?.Contents?.map((item) => item.Key);
-        return res.status(200).json({ message: "success", result });
-    };
-    deleteFolder = async (req, res, next) => {
-        let result = await (0, s3_config_1.listFiles)({
-            path: "users/68cf0c47191f79cdc7fee5ee"
-        });
-        if (!result?.Contents) {
-            throw new classError_1.AppError("not found", 404);
-        }
-        result = result?.Contents?.map((item) => item.Key);
-        await (0, s3_config_1.deleteFiles)({
-            urls: result,
-            Quiet: true
-        });
-        return res.status(200).json({ message: "success", result });
-    };
     freezeAccount = async (req, res, next) => {
         const { userId } = req.params;
         if (userId && req.user?.role !== user_model_1.RoleType.admin) {
@@ -337,7 +174,7 @@ class UserService {
         if (req.user?.role !== user_model_1.RoleType.admin) {
             throw new classError_1.AppError("unAuthorized", 405);
         }
-        const user = await this._userModel.findOneAndUpdate({ _id: userId, deletedAt: { xists: false }, deletedBy: { $ne: userId } }, {
+        const user = await this._userModel.findOneAndUpdate({ _id: userId, deletedAt: { $exists: true } }, {
             $unset: { deletedAt: "", deletedBy: "" },
             restoredAt: new Date(),
             restoredBy: req.user?._id
@@ -373,70 +210,6 @@ class UserService {
         await this._userModel.updateOne({ email: newEmail }, { otp: hashedOTP });
         event_1.eventEmitter.emit("updateEmail", { email: newEmail, otp });
         return res.status(200).json({ message: "Email updated successfully" });
-    };
-    dashBoard = async (req, res, next) => {
-        const result = await Promise.all([
-            this._userModel.find({ filter: {} }),
-            this._postModel.find({ filter: {} }),
-        ]);
-    };
-    sendRequest = async (req, res, next) => {
-        const { userId } = req.params;
-        const user = await this._userModel.findOne({ _id: userId });
-        if (!user) {
-            throw new classError_1.AppError("user not found", 404);
-        }
-        const checkRequest = await this._friendRequestModel.findOne({
-            createdBy: { $in: [req.user?._id, userId] },
-            sendTo: { $in: [req.user?._id, userId] }
-        });
-        if (req.user?._id == userId) {
-            throw new classError_1.AppError("you can't send requesr to yourself", 400);
-        }
-        if (checkRequest) {
-            throw new classError_1.AppError("request already sent", 400);
-        }
-        const friendRequest = await this._friendRequestModel.create({
-            createdBy: req.user?._id,
-            sendTo: userId
-        });
-        return res.status(200).json({ message: "success", friendRequest });
-    };
-    acceptRequest = async (req, res, next) => {
-        const { requestId } = req.params;
-        const checkRequest = await this._friendRequestModel.findOneAndUpdate({
-            _id: requestId,
-            sendTo: req.user?._id,
-            acceptedAt: { $exists: false }
-        }, { acceptedAt: new Date() }, { new: true });
-        if (!checkRequest) {
-            throw new classError_1.AppError("request not found", 400);
-        }
-        await Promise.all([
-            this._userModel.updateOne({ _id: checkRequest.createdBy }, { $push: { friends: checkRequest.sendTo } }),
-            this._userModel.updateOne({ _id: checkRequest.sendTo }, { $push: { friends: checkRequest.createdBy } }),
-        ]);
-        return res.status(200).json({ message: "success" });
-    };
-    getOneUser = async (parent, args, context) => {
-        const { user } = await (0, authentication_1.AuthenticationGQL)(context.req.headers.authorization);
-        await (0, validation_1.validationGQL)(user_validation_1.getOneUserSchema, args);
-        await (0, authorization_1.AuthorizatinGQL)({ accessRoles: [user_model_1.RoleType.admin, user_model_1.RoleType.superAdmin], role: user.role });
-        const userExist = await this._userModel.findOne({ _id: mongoose_1.Types.ObjectId.createFromHexString(args.id) });
-        if (!userExist) {
-            throw new graphql_1.GraphQLError("user not found", { extensions: { statusCode: 401 } });
-        }
-        return userExist;
-    };
-    createUser = async (parent, args) => {
-        const { fName, lName, age, email, password, gender } = args;
-        const user = await this._userModel.findOne({ email });
-        if (user) {
-            throw new graphql_1.GraphQLError("user already exist", { extensions: { statusCode: 404 } });
-        }
-        const hashedPassword = await (0, hash_1.Hash)(password);
-        const newUser = await this._userModel.create({ fName, lName, age, email, password: hashedPassword, gender });
-        return newUser;
     };
 }
 exports.default = new UserService();

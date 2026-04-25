@@ -1,21 +1,24 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AuthorizatinGQL = exports.Authorizatin = void 0;
+exports.AuthorizationGQL = exports.Authorization = void 0;
 const classError_1 = require("../utils/classError");
 const graphql_1 = require("graphql");
-const Authorizatin = ({ accessRoles = [] }) => {
+const Authorization = ({ accessRoles = [] }) => {
     return (req, res, next) => {
-        if (!accessRoles.includes(req.user?.role)) {
-            throw new classError_1.AppError("unAuthorized");
+        const userRole = req.user?.role;
+        if (!userRole || !accessRoles.includes(userRole)) {
+            throw new classError_1.AppError('unAuthorized', 403);
         }
         next();
     };
 };
-exports.Authorizatin = Authorizatin;
-const AuthorizatinGQL = ({ accessRoles = [], role }) => {
+exports.Authorization = Authorization;
+const AuthorizationGQL = ({ accessRoles = [], role }) => {
     if (!accessRoles.includes(role)) {
-        throw new graphql_1.GraphQLError("unAuthorized", { extensions: { code: "UNAUTHORIZED", statusCode: 404 } });
+        throw new graphql_1.GraphQLError('unAuthorized', {
+            extensions: { code: 'UNAUTHORIZED', statusCode: 403 },
+        });
     }
     return true;
 };
-exports.AuthorizatinGQL = AuthorizatinGQL;
+exports.AuthorizationGQL = AuthorizationGQL;

@@ -1,20 +1,25 @@
-import { NextFunction, Request, Response } from "express";
-import { RoleType } from "../model/user.model";
-import { AppError } from "../utils/classError";
-import { GraphQLError } from "graphql";
+import { NextFunction, Request, Response } from 'express';
+import { RoleType } from '../model/user.model';
+import { AppError } from '../utils/classError';
+import { GraphQLError } from 'graphql';
 
-export const Authorizatin= ({accessRoles=[]}:{accessRoles:RoleType[]})=>{
-    return(req:Request,res:Response,next:NextFunction)=>{
-        if(!accessRoles.includes(req.user?.role!)){
-            throw new AppError("unAuthorized");
-            
-        }
-        next()
+// Express Middleware
+export const Authorization = ({ accessRoles = [] }: { accessRoles: RoleType[] }) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const userRole = req.user?.role;
+    if (!userRole || !accessRoles.includes(userRole)) {
+      throw new AppError('unAuthorized', 403);
     }
-}
-export const AuthorizatinGQL= ({accessRoles=[],role}:{accessRoles:RoleType[],role:RoleType})=>{
-        if(!accessRoles.includes(role)){
-            throw new GraphQLError("unAuthorized",{extensions:{code:"UNAUTHORIZED",statusCode:404}});            
-        }
-        return true
-    }
+    next();
+  };
+};
+
+// GraphQL Resolver
+export const AuthorizationGQL = ({ accessRoles = [], role }: { accessRoles: RoleType[]; role: RoleType }) => {
+  if (!accessRoles.includes(role)) {
+    throw new GraphQLError('unAuthorized', {
+      extensions: { code: 'UNAUTHORIZED', statusCode: 403 },
+    });
+  }
+  return true;
+};

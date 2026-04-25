@@ -4,7 +4,8 @@
   "main": "main.js",
   "type": "commonjs",
   "scripts": {
-    "start:dev": "concurrently \"tsc --watch\" \"node --watch dist/main.js\""
+    "build": "rimraf dist && tsc",
+    "dev": "concurrently \"tsc --watch\" \"node --watch dist/main.js\""
   },
   "keywords": [],
   "author": "",

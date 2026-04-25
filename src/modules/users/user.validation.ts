@@ -1,7 +1,6 @@
 import z from "zod"
 import { GenderType } from "../../model/user.model"
 import { Types } from "mongoose"
-import { generalRules } from "../../utils/generalRules"
 
 export enum flagType{
     all="all",
@@ -44,13 +43,6 @@ export const logoutSchema = {
     }).required()
 }
 
-export const loginWithGmailSchema ={
-    body:z.strictObject({
-        idToken:z.string(),
-
-    }).required()
-}
-
 export const forgetPasswordSchema ={
     body:z.strictObject({
         email:z.email(),
@@ -73,7 +65,6 @@ export const resetPasswordSchema ={
     })
 }
 
-
 export const freezeAccountSchema ={
     params:z.strictObject({
         userId:z.string().optional()
@@ -92,10 +83,6 @@ export const upDatePasswordSchema ={
     }).required()
 }
 
-export const getOneUserSchema =z.strictObject({
-    id:generalRules.id
-})
-
 export const upDateEmailSchema ={
     body:z.strictObject({
         oldEmail:z.email(),
@@ -108,7 +95,6 @@ export type signUpSchemaType = z.infer<typeof signUpSchema.body>
 export type confirmEmailSchemaType = z.infer<typeof confirmEmailSchema.body>
 export type signInSchemaType = z.infer<typeof signInSchema.body>
 export type logoutSchemaType = z.infer<typeof logoutSchema.body>
-export type loginWithGmailSchemaType= z.infer<typeof loginWithGmailSchema.body>
 export type forgetPasswordSchemaType= z.infer<typeof forgetPasswordSchema.body>
 export type resetPasswordSchemaType= z.infer<typeof resetPasswordSchema.body>
 export type freezeAccountSchemaType= z.infer<typeof freezeAccountSchema.params>
