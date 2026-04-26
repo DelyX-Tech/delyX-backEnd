@@ -4,7 +4,7 @@
   "main": "main.js",
   "type": "commonjs",
   "scripts": {
-    "build": "rimraf dist && tsc",
+    "build": "tsc",
     "start": "node dist/main.js",
     "dev": "concurrently \"tsc --watch\" \"node --watch dist/main.js\""
   },
