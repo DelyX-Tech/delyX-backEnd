@@ -12,9 +12,9 @@ userRouer.post("/logout",Authentication(),validation(UV.logoutSchema),US.logout)
 userRouer.get("/refresh",Authentication(TokenType.refresh),US.refreshToken)
 userRouer.patch("/forgetPassword",validation(UV.forgetPasswordSchema),US.forgetPassword)
 userRouer.patch("/resetPassword",validation(UV.resetPasswordSchema),US.resetPassword)
-userRouer.delete("/freeze/:userId",Authentication(),validation(UV.freezeAccountSchema),US.freezeAccount)
-userRouer.patch("/unfreeze/:userId",Authentication(),US.unfreezeAccount)
-userRouer.patch("/updatePassword",Authentication(),US.updatePassword)
-userRouer.patch("/updateEmail",Authentication(),US.updateEmail)
+userRouer.delete("/freeze/:userId",Authentication(TokenType.access),validation(UV.freezeAccountSchema),US.freezeAccount)
+userRouer.patch("/unfreeze/:userId",Authentication(TokenType.access),US.unfreezeAccount)
+userRouer.patch("/updatePassword",Authentication(TokenType.access),US.updatePassword)
+userRouer.patch("/updateEmail",Authentication(TokenType.access),US.updateEmail)
 
 export default userRouer
