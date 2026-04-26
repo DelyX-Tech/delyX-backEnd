@@ -5,6 +5,7 @@
   "type": "commonjs",
   "scripts": {
     "build": "rimraf dist && tsc",
+    "start": "node dist/main.js",
     "dev": "concurrently \"tsc --watch\" \"node --watch dist/main.js\""
   },
   "keywords": [],
