@@ -11,7 +11,7 @@ import connectionDB from "./DB/connectionDB"
 import deviceRouter from "./modules/device/device.controller"
 import orderRouter from "./modules/oreders/order.controller"
 
-config({path:resolve("./config/.env")})
+config()
 const app :express.Application=express()
 const port:string|number =process.env.PORT||5000
 
