@@ -42,8 +42,13 @@ const bootStrap = async()=>{
     // app.use("*",(req:Request,res:Response,next:NextFunction)=>{
     //     throw new AppError(`invalid url ${req.originalUrl}`,404)
     // })
-
-    app.use((req: Request, res: Response) => {
+    app.get("/", (req: Request, res: Response) => {
+        res.status(200).json({
+            success: true,
+            message: "DelyX Backend is running 🚀"
+        });
+    });
+        app.use((req: Request, res: Response) => {
         throw new AppError(`invalid url ${req.originalUrl}`, 404);
     });
     app.use((err: AppError,req:Request,res:Response,next:NextFunction)=>{

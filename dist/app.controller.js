@@ -36,6 +36,12 @@ const bootStrap = async () => {
     app.use("/devices", device_controller_1.default);
     app.use("/orders", order_controller_1.default);
     await (0, connectionDB_1.default)();
+    app.get("/", (req, res) => {
+        res.status(200).json({
+            success: true,
+            message: "DelyX Backend is running 🚀"
+        });
+    });
     app.use((req, res) => {
         throw new classError_1.AppError(`invalid url ${req.originalUrl}`, 404);
     });
