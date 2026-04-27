@@ -39,9 +39,13 @@ const bootStrap = async()=>{
     await connectionDB()
 
 
-    app.use("*",(req:Request,res:Response,next:NextFunction)=>{
-        throw new AppError(`invalid url ${req.originalUrl}`,404)
-    })
+    // app.use("*",(req:Request,res:Response,next:NextFunction)=>{
+    //     throw new AppError(`invalid url ${req.originalUrl}`,404)
+    // })
+
+    app.use((req: Request, res: Response) => {
+        throw new AppError(`invalid url ${req.originalUrl}`, 404);
+    });
     app.use((err: AppError,req:Request,res:Response,next:NextFunction)=>{
         return res.status(err.statusCode as unknown as number||500).json({message:err.message,stack:err.stack})
     })
