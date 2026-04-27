@@ -50,8 +50,8 @@ userRouer.post("/logout", (0, authentication_1.Authentication)(), (0, validation
 userRouer.get("/refresh", (0, authentication_1.Authentication)(token_1.TokenType.refresh), user_service_1.default.refreshToken);
 userRouer.patch("/forgetPassword", (0, validation_1.validation)(UV.forgetPasswordSchema), user_service_1.default.forgetPassword);
 userRouer.patch("/resetPassword", (0, validation_1.validation)(UV.resetPasswordSchema), user_service_1.default.resetPassword);
-userRouer.delete("/freeze{/:userId}", (0, authentication_1.Authentication)(), (0, validation_1.validation)(UV.freezeAccountSchema), user_service_1.default.freezeAccount);
-userRouer.patch("/unfreeze/:userId", (0, authentication_1.Authentication)(), user_service_1.default.unfreezeAccount);
-userRouer.patch("/updatePassword", (0, authentication_1.Authentication)(), user_service_1.default.updatePassword);
-userRouer.patch("/updateEmail", (0, authentication_1.Authentication)(), user_service_1.default.updateEmail);
+userRouer.delete("/freeze/:userId", (0, authentication_1.Authentication)(token_1.TokenType.access), (0, validation_1.validation)(UV.freezeAccountSchema), user_service_1.default.freezeAccount);
+userRouer.patch("/unfreeze/:userId", (0, authentication_1.Authentication)(token_1.TokenType.access), user_service_1.default.unfreezeAccount);
+userRouer.patch("/updatePassword", (0, authentication_1.Authentication)(token_1.TokenType.access), user_service_1.default.updatePassword);
+userRouer.patch("/updateEmail", (0, authentication_1.Authentication)(token_1.TokenType.access), user_service_1.default.updateEmail);
 exports.default = userRouer;
