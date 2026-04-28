@@ -21,14 +21,14 @@ class UserService {
     //========================================================================
     signUp = async(req:Request,res:Response,next:NextFunction)=>{
 
-        let{userName,email,password,cPassword,gender,address,age,phone}:signUpSchemaType=req.body
+        let{userName, email, password, cPassword, gender, address, age, phone, role}:signUpSchemaType=req.body
         if(await this._userModel.findOne({email})){
             throw new AppError("email already exist",405)
         }
         const hash = await Hash(password)
         const otp = await GeneratOTP()
         const hashedOTP =await Hash(String(otp))
-        const user=await this._userModel.creatOneUser({userName,email,otp:hashedOTP,password:hash,gender,address,age,phone})
+        const user=await this._userModel.creatOneUser({userName,email,otp:hashedOTP,password:hash,gender,address,age,phone, role})
         eventEmitter.emit("confirmEmail",{email,otp})
         return res.status(200).json({message:"welcom",user})
     }

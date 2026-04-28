@@ -52,14 +52,14 @@ class UserService {
     _revokToken = new revok_repository_1.RevokTokenRepository(revok_Token_1.default);
     constructor() { }
     signUp = async (req, res, next) => {
-        let { userName, email, password, cPassword, gender, address, age, phone } = req.body;
+        let { userName, email, password, cPassword, gender, address, age, phone, role } = req.body;
         if (await this._userModel.findOne({ email })) {
             throw new classError_1.AppError("email already exist", 405);
         }
         const hash = await (0, hash_1.Hash)(password);
         const otp = await (0, sendEmail_1.GeneratOTP)();
         const hashedOTP = await (0, hash_1.Hash)(String(otp));
-        const user = await this._userModel.creatOneUser({ userName, email, otp: hashedOTP, password: hash, gender, address, age, phone });
+        const user = await this._userModel.creatOneUser({ userName, email, otp: hashedOTP, password: hash, gender, address, age, phone, role });
         event_1.eventEmitter.emit("confirmEmail", { email, otp });
         return res.status(200).json({ message: "welcom", user });
     };

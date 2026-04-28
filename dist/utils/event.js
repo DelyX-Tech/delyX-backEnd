@@ -18,6 +18,14 @@ exports.eventEmitter.on("confirmEmail", async (data) => {
         html: (0, email_temp_1.emailTemplate)(otp, "Email Confirmation"),
     });
 });
+exports.eventEmitter.on("deliveryOtp", async (data) => {
+    const { email, otp } = data;
+    await (0, sendEmail_1.sendEmail)({
+        to: email,
+        subject: "Delivery OTP",
+        html: (0, email_temp_1.emailTemplate)(otp, "Delivery OTP"),
+    });
+});
 exports.eventEmitter.on("forgetPassword", async (data) => {
     const { email, otp } = data;
     await (0, sendEmail_1.sendEmail)({

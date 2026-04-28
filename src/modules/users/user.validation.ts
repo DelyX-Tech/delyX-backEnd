@@ -1,5 +1,5 @@
 import z from "zod"
-import { GenderType } from "../../model/user.model"
+import { GenderType, RoleType } from "../../model/user.model"
 import { Types } from "mongoose"
 
 export enum flagType{
@@ -15,16 +15,17 @@ export const signInSchema = {
 }
 
 export const signUpSchema = {
-    body:signInSchema.body.extend({
-        userName:z.string().min(3).trim(),
-        cPassword:z.string(),
-        phone:z.string(),
-        age:z.number(),
-        gender:z.enum([GenderType.male,GenderType.female]),
-        address:z.string()
-    }).required().superRefine((data,ctx)=>{
-        if(data.password!==data.cPassword){
-            ctx.addIssue({ code: "custom",path:["cPassword"],message:"password not match"})
+    body: signInSchema.body.extend({
+        userName: z.string().min(3).trim(),
+        cPassword: z.string(),
+        phone: z.string(),
+        age: z.number(),
+        gender: z.enum([GenderType.male, GenderType.female]),
+        address: z.string(),
+        role: z.enum([RoleType.user, RoleType.admin]).default(RoleType.user)
+    }).superRefine((data, ctx) => {
+        if (data.password !== data.cPassword) {
+            ctx.addIssue({ code: "custom", path: ["cPassword"], message: "password not match" })
         }
     })
 }

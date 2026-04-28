@@ -6,10 +6,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importDefault(require("mongoose"));
 const enums_1 = require("../utils/enums");
 const deviceSchema = new mongoose_1.default.Schema({
-    deviceId: {
+    deviceName: {
         type: String,
         required: true,
         unique: true,
+        trim: true
+    },
+    type: {
+        type: String,
+        required: true,
         trim: true
     },
     status: {
@@ -24,21 +29,26 @@ const deviceSchema = new mongoose_1.default.Schema({
         default: 100
     },
     lastLocation: {
-        lat: Number,
-        lng: Number
+        lat: { type: Number },
+        lng: { type: Number }
     },
     currentOrder: {
         type: mongoose_1.default.Schema.Types.ObjectId,
-        ref: "Order"
+        ref: "Order",
+        default: null
     },
     isActive: {
         type: Boolean,
         default: true
+    },
+    lastSeen: {
+        type: Date,
+        default: null
     }
 }, {
     timestamps: true,
-    toObject: { virtuals: true },
-    toJSON: { virtuals: true }
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
 const deviceModel = mongoose_1.default.models.Device || mongoose_1.default.model("Device", deviceSchema);
 exports.default = deviceModel;

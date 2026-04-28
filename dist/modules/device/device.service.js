@@ -10,38 +10,47 @@ const enums_1 = require("../../utils/enums");
 class DeviceService {
     _deviceModel = new device_repository_1.DeviceRepository(device_model_1.default);
     registerDevice = async (req, res) => {
-        const { deviceId } = req.body;
-        if (!deviceId)
-            throw new classError_1.AppError("deviceId required", 400);
-        const existing = await this._deviceModel.findOne({
-            filter: { deviceId }
-        });
-        if (existing) {
-            throw new classError_1.AppError("Device already exists", 409);
-        }
+        const { deviceName, type, status, batteryLevel, lastLocation } = req.body;
         const device = await this._deviceModel.create({
-            deviceId,
-            status: enums_1.DeviceStatus.IDLE,
+            deviceName,
+            type,
+            status: status || "idle",
+            batteryLevel: batteryLevel ?? 100,
+            lastLocation: lastLocation || null,
             isActive: true,
-            batteryLevel: 100
+            lastSeen: new Date()
         });
-        return res.status(201).json({ device });
+        return res.status(201).json({
+            message: "device registered",
+            device: {
+                ...device.toObject(),
+                deviceId: device._id
+            }
+        });
     };
     getAllDevices = async (req, res) => {
         const devices = await this._deviceModel.find({
             filter: {},
             options: { sort: { createdAt: -1 } }
         });
-        return res.status(200).json({ devices });
+        return res.status(200).json({
+            devices: devices.map((d) => ({
+                ...d.toObject(),
+                deviceId: d._id
+            }))
+        });
     };
     getSingleDevice = async (req, res) => {
         const { deviceId } = req.params;
-        const device = await this._deviceModel.findOne({
-            filter: { deviceId }
-        });
+        const device = await this._deviceModel.findOne({ _id: deviceId });
         if (!device)
             throw new classError_1.AppError("Device not found", 404);
-        return res.status(200).json({ device });
+        return res.status(200).json({
+            device: {
+                ...device.toObject(),
+                deviceId: device._id
+            }
+        });
     };
     updateStatus = async (req, res) => {
         const { deviceId } = req.params;
@@ -49,10 +58,15 @@ class DeviceService {
         if (!Object.values(enums_1.DeviceStatus).includes(status)) {
             throw new classError_1.AppError("Invalid status", 400);
         }
-        const device = await this._deviceModel.findOneAndUpdate({ deviceId }, { status }, { new: true });
+        const device = await this._deviceModel.findOneAndUpdate({ _id: deviceId }, { status }, { new: true });
         if (!device)
             throw new classError_1.AppError("Device not found", 404);
-        return res.status(200).json({ device });
+        return res.status(200).json({
+            device: {
+                ...device.toObject(),
+                deviceId: device._id
+            }
+        });
     };
     heartbeat = async (req, res) => {
         const { deviceId } = req.params;
@@ -74,20 +88,27 @@ class DeviceService {
         if (lat !== undefined && lng !== undefined) {
             updateData.lastLocation = { lat, lng };
         }
-        const device = await this._deviceModel.findOneAndUpdate({ deviceId }, updateData, { new: true });
+        const device = await this._deviceModel.findOneAndUpdate({ _id: deviceId }, updateData, { new: true });
         if (!device)
             throw new classError_1.AppError("Device not found", 404);
-        return res.status(200).json({ device });
+        return res.status(200).json({
+            device: {
+                ...device.toObject(),
+                deviceId: device._id
+            }
+        });
     };
     deactivateDevice = async (req, res) => {
         const { deviceId } = req.params;
-        const device = await this._deviceModel.findOneAndUpdate({ deviceId }, {
-            isActive: false,
-            status: enums_1.DeviceStatus.OFFLINE
-        }, { new: true });
+        const device = await this._deviceModel.findOneAndUpdate({ _id: deviceId }, { isActive: false, status: enums_1.DeviceStatus.OFFLINE }, { new: true });
         if (!device)
             throw new classError_1.AppError("Device not found", 404);
-        return res.status(200).json({ device });
+        return res.status(200).json({
+            device: {
+                ...device.toObject(),
+                deviceId: device._id
+            }
+        });
     };
 }
 exports.default = new DeviceService();

@@ -33,7 +33,7 @@ const bootStrap = async()=>{
     app.use(helmet())
     app.use(limiter)
     app.use("/users",userRouer)
-    app.use("/devices",deviceRouter)
+    app.use("/device",deviceRouter)
     app.use("/orders",orderRouter)
 
     await connectionDB()

@@ -4,8 +4,7 @@ import { z } from "zod";
 // Register Device (Admin)
 export const registerDeviceSchema = {
   body: z.strictObject({
-    deviceId: z.string().trim(),
-    name: z.string().min(3).trim(),
+    deviceName: z.string().trim(),
     type: z.string().trim(),
     status: z.enum(["idle", "delivering", "offline"]).optional(), // ممكن يكون اختياري
     batteryLevel: z.number().min(0).max(100).optional(),
@@ -30,7 +29,7 @@ export const updateStatusSchema = {
         lng: z.number(),
       })
       .optional(),
-  }).required(),
+  }),
 };
 
 // =======================================================

@@ -12,9 +12,12 @@ const order_repository_1 = require("../../DB/repositories/order.repository");
 const orders_model_1 = __importDefault(require("../../model/orders.model"));
 const device_repository_1 = require("../../DB/repositories/device.repository");
 const device_model_1 = __importDefault(require("../../model/device.model"));
+const user_repository_1 = require("../../DB/repositories/user.repository");
+const user_model_1 = __importDefault(require("../../model/user.model"));
 class OrderService {
     _orderModel = new order_repository_1.OrdereRepository(orders_model_1.default);
     _deviceModel = new device_repository_1.DeviceRepository(device_model_1.default);
+    _userModel = new user_repository_1.UserRepository(user_model_1.default);
     constructor() { }
     createOrder = async (req, res) => {
         if (!req.user?._id)
@@ -46,14 +49,10 @@ class OrderService {
     };
     dispatchOrder = async (req, res) => {
         const { orderId, deviceId } = req.body;
-        const order = await this._orderModel.findOne({
-            filter: { _id: orderId }
-        });
+        const order = await this._orderModel.findOne({ _id: orderId });
         if (!order)
             throw new classError_1.AppError("Order not found", 404);
-        const device = await this._deviceModel.findOne({
-            filter: { deviceId }
-        });
+        const device = await this._deviceModel.findOne({ _id: deviceId });
         if (!device)
             throw new classError_1.AppError("Device not found", 404);
         await this._orderModel.updateOne({ _id: order._id }, {
@@ -69,18 +68,26 @@ class OrderService {
     markDelivered = async (req, res) => {
         const { orderId } = req.params;
         const order = await this._orderModel.findOne({
-            filter: { _id: orderId }
+            _id: orderId,
+            status: enums_1.OrderStatus.OUT_FOR_DELIVERY
         });
         if (!order)
-            throw new classError_1.AppError("Order not found", 404);
-        await this._orderModel.updateOne({ _id: order._id }, { status: enums_1.OrderStatus.DELIVERED });
-        return res.status(200).json({ message: "Order delivered" });
+            throw new classError_1.AppError("Order not found or not out for delivery", 404);
+        const user = await this._userModel.findOne({ _id: order.userId });
+        if (!user)
+            throw new classError_1.AppError("User not found", 404);
+        const otp = await (0, sendEmail_1.GeneratOTP)();
+        const hashedOTP = await (0, hash_1.Hash)(String(otp));
+        await this._orderModel.updateOne({ _id: order._id }, { otp: hashedOTP, otpUsed: false });
+        event_1.eventEmitter.emit("deliveryOtp", {
+            email: user.email,
+            otp
+        });
+        return res.status(200).json({ message: "OTP sent to user" });
     };
     verifyOtp = async (req, res) => {
         const { orderId, otp } = req.body;
-        const order = await this._orderModel.findOne({
-            filter: { _id: orderId }
-        });
+        const order = await this._orderModel.findOne({ _id: orderId });
         if (!order)
             throw new classError_1.AppError("Order not found", 404);
         if (order.otpUsed)
@@ -92,13 +99,17 @@ class OrderService {
             otpUsed: true,
             status: enums_1.OrderStatus.DELIVERED
         });
+        if (order.deviceId) {
+            await this._deviceModel.updateOne({ _id: order.deviceId }, {
+                status: enums_1.DeviceStatus.IDLE,
+                currentOrder: null
+            });
+        }
         return res.status(200).json({ message: "Order completed" });
     };
     cancelOrder = async (req, res) => {
         const { orderId } = req.params;
-        const order = await this._orderModel.findOne({
-            filter: { _id: orderId }
-        });
+        const order = await this._orderModel.findOne({ _id: orderId });
         if (!order)
             throw new classError_1.AppError("Order not found", 404);
         if (order.status === enums_1.OrderStatus.DELIVERED) {
@@ -108,6 +119,12 @@ class OrderService {
             status: enums_1.OrderStatus.CANCELLED,
             isCancelled: true
         });
+        if (order.deviceId) {
+            await this._deviceModel.updateOne({ _id: order.deviceId }, {
+                status: enums_1.DeviceStatus.IDLE,
+                currentOrder: null
+            });
+        }
         return res.status(200).json({ message: "Order cancelled" });
     };
     getOrders = async (req, res) => {
@@ -118,9 +135,7 @@ class OrderService {
     };
     getOrderById = async (req, res) => {
         const { orderId } = req.params;
-        const order = await this._orderModel.findOne({
-            filter: { _id: orderId }
-        });
+        const order = await this._orderModel.findOne({ _id: orderId });
         if (!order)
             throw new classError_1.AppError("Order not found", 404);
         return res.status(200).json({ order });

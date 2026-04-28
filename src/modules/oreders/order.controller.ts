@@ -18,7 +18,6 @@ orderRouter.post(
     OS.createOrder
 );
 
-
 // =======================================================
 // GET ALL ORDERS (USER)
 orderRouter.get(

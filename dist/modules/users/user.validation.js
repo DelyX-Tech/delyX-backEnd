@@ -25,8 +25,9 @@ exports.signUpSchema = {
         phone: zod_1.default.string(),
         age: zod_1.default.number(),
         gender: zod_1.default.enum([user_model_1.GenderType.male, user_model_1.GenderType.female]),
-        address: zod_1.default.string()
-    }).required().superRefine((data, ctx) => {
+        address: zod_1.default.string(),
+        role: zod_1.default.enum([user_model_1.RoleType.user, user_model_1.RoleType.admin]).default(user_model_1.RoleType.user)
+    }).superRefine((data, ctx) => {
         if (data.password !== data.cPassword) {
             ctx.addIssue({ code: "custom", path: ["cPassword"], message: "password not match" });
         }

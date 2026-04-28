@@ -8,10 +8,15 @@ import { OrdereRepository } from "../../DB/repositories/order.repository";
 import orderModel from "../../model/orders.model";
 import { DeviceRepository } from "../../DB/repositories/device.repository";
 import deviceModel from "../../model/device.model";
+import { Types } from "mongoose";
+import { UserRepository } from "../../DB/repositories/user.repository";
+import userModdel from "../../model/user.model";
 
 class OrderService {
     private _orderModel = new OrdereRepository(orderModel);
     private _deviceModel = new DeviceRepository(deviceModel);
+    private _userModel = new UserRepository(userModdel);
+
 
     constructor() {}
 
@@ -59,127 +64,150 @@ class OrderService {
 
     // =======================================================
     dispatchOrder = async (req: Request, res: Response) => {
-        const { orderId, deviceId } = req.body;
+    const { orderId, deviceId } = req.body;
 
-        const order = await this._orderModel.findOne({
-            filter: { _id: orderId }
-        });
+    const order = await this._orderModel.findOne({ _id: orderId });
 
-        if (!order) throw new AppError("Order not found", 404);
+    if (!order) throw new AppError("Order not found", 404);
 
-        const device = await this._deviceModel.findOne({
-            filter: { deviceId }
-        });
+    const device = await this._deviceModel.findOne({ _id: deviceId });
+    if (!device) throw new AppError("Device not found", 404);
+    
+    await this._orderModel.updateOne(
+        { _id: order._id },
+        {
+            deviceId: device._id,
+            status: OrderStatus.OUT_FOR_DELIVERY
+        }
+    );
 
-        if (!device) throw new AppError("Device not found", 404);
+    await this._deviceModel.updateOne(
+        { _id: device._id },
+        {
+            status: DeviceStatus.DELIVERING,
+            currentOrder: order._id
+        }
+    );
 
-        await this._orderModel.updateOne(
-            { _id: order._id },
-            {
-                deviceId: device._id,
-                status: OrderStatus.OUT_FOR_DELIVERY
-            }
-        );
-
-        await this._deviceModel.updateOne(
-            { _id: device._id },
-            {
-                status: DeviceStatus.DELIVERING,
-                currentOrder: order._id
-            }
-        );
-
-        return res.status(200).json({ message: "Order dispatched" });
-    };
-
+    return res.status(200).json({ message: "Order dispatched" });
+};
     // =======================================================
     markDelivered = async (req: Request, res: Response) => {
-        const { orderId } = req.params;
+    const { orderId } = req.params;
 
-        const order = await this._orderModel.findOne({
-            filter: { _id: orderId }
-        });
+    const order = await this._orderModel.findOne({ 
+        _id: orderId, 
+        status: OrderStatus.OUT_FOR_DELIVERY 
+    });
 
-        if (!order) throw new AppError("Order not found", 404);
+    if (!order) throw new AppError("Order not found or not out for delivery", 404);
+    
+    const user = await this._userModel.findOne({ _id: order.userId });
+    
+    if (!user) throw new AppError("User not found", 404);
 
-        await this._orderModel.updateOne(
-            { _id: order._id },
-            { status: OrderStatus.DELIVERED }
-        );
+    // ولد OTP جديد
+    const otp = await GeneratOTP();
+    const hashedOTP = await Hash(String(otp));
 
-        return res.status(200).json({ message: "Order delivered" });
-    };
+    // حدث الـ order بالـ OTP الجديد
+    await this._orderModel.updateOne(
+        { _id: order._id },
+        { otp: hashedOTP, otpUsed: false }
+    );
 
-    // =======================================================
-    verifyOtp = async (req: Request, res: Response) => {
-        const { orderId, otp } = req.body;
+    eventEmitter.emit("deliveryOtp", { 
+        email: user.email, 
+        otp 
+    });
 
-        const order = await this._orderModel.findOne({
-            filter: { _id: orderId }
-        });
+    return res.status(200).json({ message: "OTP sent to user" });
+};
 
-        if (!order) throw new AppError("Order not found", 404);
+// =======================================================
+verifyOtp = async (req: Request, res: Response) => {
+    const { orderId, otp } = req.body;
 
-        if (order.otpUsed) throw new AppError("OTP already used", 400);
+    const order = await this._orderModel.findOne({ _id: orderId });
 
-        const isValid = await Compare(otp, order.otp);
-        if (!isValid) throw new AppError("Invalid OTP", 400);
+    if (!order) throw new AppError("Order not found", 404);
 
-        await this._orderModel.updateOne(
-            { _id: order._id },
-            {
-                otpUsed: true,
-                status: OrderStatus.DELIVERED
-            }
-        );
+    if (order.otpUsed) throw new AppError("OTP already used", 400);
 
-        return res.status(200).json({ message: "Order completed" });
-    };
+    const isValid = await Compare(otp, order.otp);
+    if (!isValid) throw new AppError("Invalid OTP", 400);
 
-    // =======================================================
-    cancelOrder = async (req: Request, res: Response) => {
-        const { orderId } = req.params;
-
-        const order = await this._orderModel.findOne({
-            filter: { _id: orderId }
-        });
-
-        if (!order) throw new AppError("Order not found", 404);
-
-        if (order.status === OrderStatus.DELIVERED) {
-            throw new AppError("Cannot cancel delivered order", 400);
+    await this._orderModel.updateOne(
+        { _id: order._id },
+        {
+            otpUsed: true,
+            status: OrderStatus.DELIVERED
         }
+    );
 
-        await this._orderModel.updateOne(
-            { _id: order._id },
+    // تحرير الـ device
+    if (order.deviceId) {
+        await this._deviceModel.updateOne(
+            { _id: order.deviceId },
             {
-                status: OrderStatus.CANCELLED,
-                isCancelled: true
+                status: DeviceStatus.IDLE,
+                currentOrder: null
             }
         );
+    }
 
-        return res.status(200).json({ message: "Order cancelled" });
-    };
+    return res.status(200).json({ message: "Order completed" });
+};
+    
 
-    // =======================================================
+// =======================================================
+cancelOrder = async (req: Request, res: Response) => {
+const { orderId } = req.params;
+    const order = await this._orderModel.findOne({ _id: orderId });
+    
+
+    if (!order) throw new AppError("Order not found", 404);
+
+    if (order.status === OrderStatus.DELIVERED) {
+        throw new AppError("Cannot cancel delivered order", 400);
+    }
+
+    await this._orderModel.updateOne(
+        { _id: order._id },
+        {
+            status: OrderStatus.CANCELLED,
+            isCancelled: true
+        }
+    );
+
+    // تحرير الـ device لو كان متربط
+    if (order.deviceId) {
+        await this._deviceModel.updateOne(
+            { _id: order.deviceId },
+            {
+                status: DeviceStatus.IDLE,
+                currentOrder: null
+            }
+        );
+    }
+
+    return res.status(200).json({ message: "Order cancelled" });
+};
+
+// =======================================================
     getOrders = async (req: Request, res: Response) => {
-        const orders = await this._orderModel.find({
-            filter: { userId: req.user?._id }
+        const orders = await this._orderModel.find({ 
+            filter: { userId: req.user?._id as Types.ObjectId }
         });
-
         return res.status(200).json({ orders });
     };
+        
 
-    // =======================================================
+// =======================================================
     getOrderById = async (req: Request, res: Response) => {
         const { orderId } = req.params;
-
-        const order = await this._orderModel.findOne({
-            filter: { _id: orderId }
-        });
-
+        const order = await this._orderModel.findOne({ _id: orderId });
         if (!order) throw new AppError("Order not found", 404);
-
         return res.status(200).json({ order });
     };
 }

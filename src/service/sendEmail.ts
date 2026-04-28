@@ -14,7 +14,7 @@ export const sendEmail =async (mailOptions:Mail.Options)=>{
 
     
         const info = await transporter.sendMail({
-        from: `"socialMediaApp" <${ process.env.EMAIL}>`,
+        from: `"DelyX" <${ process.env.EMAIL}>`,
         ...mailOptions
     });
         

@@ -33,7 +33,7 @@ const bootStrap = async () => {
     app.use((0, helmet_1.default)());
     app.use(limiter);
     app.use("/users", user_controller_1.default);
-    app.use("/devices", device_controller_1.default);
+    app.use("/device", device_controller_1.default);
     app.use("/orders", order_controller_1.default);
     await (0, connectionDB_1.default)();
     app.get("/", (req, res) => {

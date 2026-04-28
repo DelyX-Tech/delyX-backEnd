@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import { DeviceRepository } from "../../DB/repositories/device.repository";
 import deviceModel from "../../model/device.model";
 import { AppError } from "../../utils/classError";
@@ -9,26 +9,25 @@ class DeviceService {
 
     // REGISTER
     registerDevice = async (req: Request, res: Response) => {
-        const { deviceId } = req.body;
-
-        if (!deviceId) throw new AppError("deviceId required", 400);
-
-        const existing = await this._deviceModel.findOne({
-            filter: { deviceId }
-        });
-
-        if (existing) {
-            throw new AppError("Device already exists", 409);
-        }
+        const { deviceName, type, status, batteryLevel, lastLocation } = req.body;
 
         const device = await this._deviceModel.create({
-            deviceId,
-            status: DeviceStatus.IDLE,
+            deviceName,
+            type,
+            status: status || "idle",
+            batteryLevel: batteryLevel ?? 100,
+            lastLocation: lastLocation || null,
             isActive: true,
-            batteryLevel: 100
+            lastSeen: new Date()
         });
 
-        return res.status(201).json({ device });
+        return res.status(201).json({
+            message: "device registered",
+            device: {
+                ...device.toObject(),
+                deviceId: device._id
+            }
+        });
     };
 
     // GET ALL
@@ -38,22 +37,30 @@ class DeviceService {
             options: { sort: { createdAt: -1 } }
         });
 
-        return res.status(200).json({ devices });
+        return res.status(200).json({
+            devices: devices.map((d: any) => ({
+                ...d.toObject(),
+                deviceId: d._id
+            }))
+        });
     };
 
     // GET ONE
     getSingleDevice = async (req: Request, res: Response) => {
         const { deviceId } = req.params;
-
-        const device = await this._deviceModel.findOne({
-            filter: { deviceId }
-        });
+        
+        const device = await this._deviceModel.findOne({ _id: deviceId });
 
         if (!device) throw new AppError("Device not found", 404);
-
-        return res.status(200).json({ device });
+        
+        return res.status(200).json({
+            device: {
+                ...device.toObject(),
+                deviceId: device._id
+            }
+        });
     };
-
+        
     // UPDATE STATUS
     updateStatus = async (req: Request, res: Response) => {
         const { deviceId } = req.params;
@@ -64,14 +71,19 @@ class DeviceService {
         }
 
         const device = await this._deviceModel.findOneAndUpdate(
-            { deviceId },
+            { _id: deviceId },
             { status },
             { new: true }
         );
 
         if (!device) throw new AppError("Device not found", 404);
 
-        return res.status(200).json({ device });
+        return res.status(200).json({
+            device: {
+                ...device.toObject(),
+                deviceId: device._id
+            }
+        });
     };
 
     // HEARTBEAT
@@ -101,14 +113,19 @@ class DeviceService {
         }
 
         const device = await this._deviceModel.findOneAndUpdate(
-            { deviceId },
+            { _id: deviceId },
             updateData,
             { new: true }
         );
 
         if (!device) throw new AppError("Device not found", 404);
 
-        return res.status(200).json({ device });
+        return res.status(200).json({
+            device: {
+                ...device.toObject(),
+                deviceId: device._id
+            }
+        });
     };
 
     // DEACTIVATE
@@ -116,17 +133,19 @@ class DeviceService {
         const { deviceId } = req.params;
 
         const device = await this._deviceModel.findOneAndUpdate(
-            { deviceId },
-            {
-                isActive: false,
-                status: DeviceStatus.OFFLINE
-            },
+            { _id: deviceId },
+            { isActive: false, status: DeviceStatus.OFFLINE },
             { new: true }
         );
 
         if (!device) throw new AppError("Device not found", 404);
 
-        return res.status(200).json({ device });
+        return res.status(200).json({
+            device: {
+                ...device.toObject(),
+                deviceId: device._id
+            }
+        });
     };
 }
 

@@ -4,8 +4,7 @@ exports.heartbeatSchema = exports.deactivateDeviceSchema = exports.updateStatusS
 const zod_1 = require("zod");
 exports.registerDeviceSchema = {
     body: zod_1.z.strictObject({
-        deviceId: zod_1.z.string().trim(),
-        name: zod_1.z.string().min(3).trim(),
+        deviceName: zod_1.z.string().trim(),
         type: zod_1.z.string().trim(),
         status: zod_1.z.enum(["idle", "delivering", "offline"]).optional(),
         batteryLevel: zod_1.z.number().min(0).max(100).optional(),
@@ -27,7 +26,7 @@ exports.updateStatusSchema = {
             lng: zod_1.z.number(),
         })
             .optional(),
-    }).required(),
+    }),
 };
 exports.deactivateDeviceSchema = {
     params: zod_1.z.strictObject({

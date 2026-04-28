@@ -7,13 +7,14 @@ import * as DV from "./device.validation";
 import { Authentication } from "../../middleware/authentication";
 import { RoleType } from "../../model/user.model";
 import { Authorization } from "../../middleware/authorization";
+import { TokenType } from "../../utils/token";
 
 
 // =======================================================
 // Register device (Admin only)
 deviceRouter.post(
     "/register",
-    Authentication(),
+    Authentication(TokenType.access),
     Authorization({ accessRoles: [RoleType.admin] }),
     validation(DV.registerDeviceSchema),
     DS.registerDevice
