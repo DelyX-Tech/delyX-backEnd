@@ -29,7 +29,10 @@ const limiter = (0, express_rate_limit_1.rateLimit)({
 });
 const bootStrap = async () => {
     app.use(express_1.default.json());
-    app.use((0, cors_1.default)());
+    app.use((0, cors_1.default)({
+        origin: process.env.CLIENT_URL,
+        credentials: true
+    }));
     app.use((0, helmet_1.default)());
     app.use(limiter);
     app.use("/users", user_controller_1.default);
