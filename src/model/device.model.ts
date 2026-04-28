@@ -8,7 +8,6 @@ export interface IDevice {
     type: string;
 
     status: DeviceStatus;
-    batteryLevel: number;
 
     lastLocation?: {
         lat: number;
@@ -46,12 +45,6 @@ const deviceSchema = new mongoose.Schema<IDevice>(
             default: DeviceStatus.IDLE
         },
 
-        batteryLevel: {
-            type: Number,
-            min: 0,
-            max: 100,
-            default: 100
-        },
 
         lastLocation: {
             lat: { type: Number },

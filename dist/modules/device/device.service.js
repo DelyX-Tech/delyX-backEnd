@@ -15,7 +15,6 @@ class DeviceService {
             deviceName,
             type,
             status: status || "idle",
-            batteryLevel: batteryLevel ?? 100,
             lastLocation: lastLocation || null,
             isActive: true,
             lastSeen: new Date()

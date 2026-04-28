@@ -22,12 +22,6 @@ const deviceSchema = new mongoose_1.default.Schema({
         enum: Object.values(enums_1.DeviceStatus),
         default: enums_1.DeviceStatus.IDLE
     },
-    batteryLevel: {
-        type: Number,
-        min: 0,
-        max: 100,
-        default: 100
-    },
     lastLocation: {
         lat: { type: Number },
         lng: { type: Number }
