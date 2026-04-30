@@ -52,8 +52,7 @@ deviceRouter.patch(
 // Heartbeat (Device + Admin) 
 deviceRouter.patch(
     "/:deviceId/heartbeat",
-    Authentication(),
-    Authorization({ accessRoles: [RoleType.admin, RoleType.user] }),
+    validation(DV.heartbeatSchema),
     DS.heartbeat
 );
 

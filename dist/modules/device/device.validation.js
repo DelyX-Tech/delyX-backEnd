@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.heartbeatSchema = exports.deactivateDeviceSchema = exports.updateStatusSchema = exports.registerDeviceSchema = void 0;
 const zod_1 = require("zod");
+const enums_1 = require("../../utils/enums");
 exports.registerDeviceSchema = {
     body: zod_1.z.strictObject({
         deviceName: zod_1.z.string().trim(),
@@ -38,7 +39,7 @@ exports.heartbeatSchema = {
         deviceId: zod_1.z.string().min(1),
     }).required(),
     body: zod_1.z.strictObject({
-        batteryLevel: zod_1.z.number().min(0).max(100).optional(),
+        status: zod_1.z.nativeEnum(enums_1.DeviceStatus).optional(),
         lastLocation: zod_1.z
             .object({
             lat: zod_1.z.number(),

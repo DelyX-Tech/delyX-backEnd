@@ -49,6 +49,6 @@ deviceRouter.post("/register", (0, authentication_1.Authentication)(token_1.Toke
 deviceRouter.get("/", (0, authentication_1.Authentication)(), (0, authorization_1.Authorization)({ accessRoles: [user_model_1.RoleType.admin, user_model_1.RoleType.user] }), device_service_1.default.getAllDevices);
 deviceRouter.get("/:deviceId", (0, authentication_1.Authentication)(), (0, authorization_1.Authorization)({ accessRoles: [user_model_1.RoleType.admin, user_model_1.RoleType.user] }), device_service_1.default.getSingleDevice);
 deviceRouter.patch("/:deviceId/status", (0, authentication_1.Authentication)(), (0, authorization_1.Authorization)({ accessRoles: [user_model_1.RoleType.admin] }), (0, validation_1.validation)(DV.updateStatusSchema), device_service_1.default.updateStatus);
-deviceRouter.patch("/:deviceId/heartbeat", (0, authentication_1.Authentication)(), (0, authorization_1.Authorization)({ accessRoles: [user_model_1.RoleType.admin, user_model_1.RoleType.user] }), device_service_1.default.heartbeat);
+deviceRouter.patch("/:deviceId/heartbeat", (0, validation_1.validation)(DV.heartbeatSchema), device_service_1.default.heartbeat);
 deviceRouter.patch("/:deviceId/deactivate", (0, authentication_1.Authentication)(), (0, authorization_1.Authorization)({ accessRoles: [user_model_1.RoleType.admin] }), device_service_1.default.deactivateDevice);
 exports.default = deviceRouter;

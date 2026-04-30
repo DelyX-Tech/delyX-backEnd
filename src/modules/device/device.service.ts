@@ -88,26 +88,17 @@ class DeviceService {
     // HEARTBEAT
     heartbeat = async (req: Request, res: Response) => {
         const { deviceId } = req.params;
-        const { status, batteryLevel, lat, lng } = req.body;
-
+        const { status, lat, lng } = req.body;
         if (!deviceId) throw new AppError("deviceId required", 400);
-
         const updateData: any = {
             lastSeen: new Date()
         };
-
         if (status && Object.values(DeviceStatus).includes(status)) {
             updateData.status = status;
         }
-
-        if (batteryLevel !== undefined) {
-            if (batteryLevel < 0 || batteryLevel > 100) {
-                throw new AppError("Invalid battery level", 400);
-            }
-            updateData.batteryLevel = batteryLevel;
-        }
-
+        
         if (lat !== undefined && lng !== undefined) {
+            
             updateData.lastLocation = { lat, lng };
         }
 
@@ -116,16 +107,18 @@ class DeviceService {
             updateData,
             { new: true }
         );
-
+        
         if (!device) throw new AppError("Device not found", 404);
-
+        
         return res.status(200).json({
             device: {
                 ...device.toObject(),
+                
                 deviceId: device._id
             }
         });
     };
+
 
     // DEACTIVATE
     deactivateDevice = async (req: Request, res: Response) => {

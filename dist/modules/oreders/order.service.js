@@ -14,6 +14,7 @@ const device_repository_1 = require("../../DB/repositories/device.repository");
 const device_model_1 = __importDefault(require("../../model/device.model"));
 const user_repository_1 = require("../../DB/repositories/user.repository");
 const user_model_1 = __importDefault(require("../../model/user.model"));
+const mqtt_1 = require("../../utils/mqtt");
 class OrderService {
     _orderModel = new order_repository_1.OrdereRepository(orders_model_1.default);
     _deviceModel = new device_repository_1.DeviceRepository(device_model_1.default);
@@ -87,25 +88,53 @@ class OrderService {
     };
     verifyOtp = async (req, res) => {
         const { orderId, otp } = req.body;
+        if (!orderId || !otp) {
+            throw new classError_1.AppError("orderId and otp are required", 400);
+        }
         const order = await this._orderModel.findOne({ _id: orderId });
-        if (!order)
+        if (!order) {
             throw new classError_1.AppError("Order not found", 404);
-        if (order.otpUsed)
+        }
+        if (order.otpUsed) {
             throw new classError_1.AppError("OTP already used", 400);
+        }
+        if (!order.otp) {
+            throw new classError_1.AppError("OTP not set", 400);
+        }
         const isValid = await (0, hash_1.Compare)(otp, order.otp);
-        if (!isValid)
+        if (!isValid) {
             throw new classError_1.AppError("Invalid OTP", 400);
-        await this._orderModel.updateOne({ _id: order._id }, {
-            otpUsed: true,
-            status: enums_1.OrderStatus.DELIVERED
-        });
-        if (order.deviceId) {
-            await this._deviceModel.updateOne({ _id: order.deviceId }, {
+        }
+        const updatedOrder = await this._orderModel.findOneAndUpdate({
+            _id: orderId,
+            otpUsed: false
+        }, {
+            $set: {
+                otpUsed: true,
+                status: enums_1.OrderStatus.DELIVERED
+            }
+        }, { new: true });
+        if (!updatedOrder) {
+            throw new classError_1.AppError("Order already processed", 400);
+        }
+        if (updatedOrder.deviceId) {
+            await this._deviceModel.updateOne({ _id: updatedOrder.deviceId }, {
                 status: enums_1.DeviceStatus.IDLE,
                 currentOrder: null
             });
+            try {
+                mqtt_1.mqttClient.publish(`devices/${updatedOrder.deviceId}/commands`, JSON.stringify({
+                    action: "OPEN_DOOR",
+                    orderId: updatedOrder._id
+                }), { qos: 1 });
+            }
+            catch (err) {
+                console.error("MQTT publish failed:", err);
+            }
         }
-        return res.status(200).json({ message: "Order completed" });
+        return res.status(200).json({
+            message: "Order completed successfully"
+        });
     };
     cancelOrder = async (req, res) => {
         const { orderId } = req.params;

@@ -5,6 +5,7 @@ import * as OV from "./order.validation";
 import { Authentication } from "../../middleware/authentication";
 import { Authorization } from "../../middleware/authorization";
 import { RoleType } from "../../model/user.model";
+import { TokenType } from "../../utils/token";
 
 const orderRouter = Router();
 
@@ -41,8 +42,8 @@ orderRouter.get(
 // CONFIRM ORDER (ADMIN)
 orderRouter.patch(
     "/:orderId/confirm",
-    Authentication(),
-    Authorization({ accessRoles: [RoleType.admin] }),
+    Authentication(TokenType.access),
+    //Authorization({ accessRoles: [RoleType.admin] }),
     validation(OV.confirmOrderSchema),
     OS.confirmOrder
 );
@@ -53,7 +54,7 @@ orderRouter.patch(
 orderRouter.patch(
     "/dispatch",
     Authentication(),
-    Authorization({ accessRoles: [RoleType.admin] }),
+    //Authorization({ accessRoles: [RoleType.admin] }),
     validation(OV.dispatchOrderSchema),
     OS.dispatchOrder
 );
@@ -73,7 +74,6 @@ orderRouter.patch(
 // VERIFY OTP (USER)
 orderRouter.post(
     "/verify-otp",
-    Authentication(),
     validation(OV.verifyOtpSchema),
     OS.verifyOtp
 );

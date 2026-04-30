@@ -69,7 +69,7 @@ class DeviceService {
     };
     heartbeat = async (req, res) => {
         const { deviceId } = req.params;
-        const { status, batteryLevel, lat, lng } = req.body;
+        const { status, lat, lng } = req.body;
         if (!deviceId)
             throw new classError_1.AppError("deviceId required", 400);
         const updateData = {
@@ -77,12 +77,6 @@ class DeviceService {
         };
         if (status && Object.values(enums_1.DeviceStatus).includes(status)) {
             updateData.status = status;
-        }
-        if (batteryLevel !== undefined) {
-            if (batteryLevel < 0 || batteryLevel > 100) {
-                throw new classError_1.AppError("Invalid battery level", 400);
-            }
-            updateData.batteryLevel = batteryLevel;
         }
         if (lat !== undefined && lng !== undefined) {
             updateData.lastLocation = { lat, lng };

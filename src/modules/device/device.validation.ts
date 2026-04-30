@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DeviceStatus } from "../../utils/enums";
 
 // =======================================================
 // Register Device (Admin)
@@ -6,7 +7,7 @@ export const registerDeviceSchema = {
   body: z.strictObject({
     deviceName: z.string().trim(),
     type: z.string().trim(),
-    status: z.enum(["idle", "delivering", "offline"]).optional(), // ممكن يكون اختياري
+    status: z.enum(["idle", "delivering", "offline"]).optional(),
     batteryLevel: z.number().min(0).max(100).optional(),
     lastLocation: z
       .object({
@@ -47,12 +48,12 @@ export const heartbeatSchema = {
     deviceId: z.string().min(1),
   }).required(),
   body: z.strictObject({
-    batteryLevel: z.number().min(0).max(100).optional(),
+    status: z.nativeEnum(DeviceStatus).optional(),    
     lastLocation: z
-      .object({
-        lat: z.number(),
-        lng: z.number(),
-      })
+    .object({
+      lat: z.number(),
+      lng: z.number(),
+    })
       .optional(),
   }).required(),
 };

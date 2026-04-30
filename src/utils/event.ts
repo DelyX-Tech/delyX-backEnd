@@ -14,6 +14,14 @@ eventEmitter.on("confirmEmail", async (data) => {
         html: emailTemplate(otp, "Email Confirmation"),
     });
 });
+eventEmitter.on("orderCreated", async (data) => {
+    const { email, otp } = data;
+    await sendEmail({
+        to: email,
+        subject: "orderCreated",
+        html: emailTemplate(otp, "Email Confirmation"),
+    });
+});
 
 eventEmitter.on("deliveryOtp", async (data) => {
     const { email, otp } = data;

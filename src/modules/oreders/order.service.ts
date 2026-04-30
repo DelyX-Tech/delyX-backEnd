@@ -11,6 +11,7 @@ import deviceModel from "../../model/device.model";
 import { Types } from "mongoose";
 import { UserRepository } from "../../DB/repositories/user.repository";
 import userModdel from "../../model/user.model";
+import { mqttClient } from "../../utils/mqtt";
 
 class OrderService {
     private _orderModel = new OrdereRepository(orderModel);
@@ -128,35 +129,74 @@ class OrderService {
 verifyOtp = async (req: Request, res: Response) => {
     const { orderId, otp } = req.body;
 
+    if (!orderId || !otp) {
+        throw new AppError("orderId and otp are required", 400);
+    }
+
     const order = await this._orderModel.findOne({ _id: orderId });
 
-    if (!order) throw new AppError("Order not found", 404);
+    if (!order) {
+        throw new AppError("Order not found", 404);
+    }
 
-    if (order.otpUsed) throw new AppError("OTP already used", 400);
+    if (order.otpUsed) {
+        throw new AppError("OTP already used", 400);
+    }
+
+    if (!order.otp) {
+        throw new AppError("OTP not set", 400);
+    }
 
     const isValid = await Compare(otp, order.otp);
-    if (!isValid) throw new AppError("Invalid OTP", 400);
 
-    await this._orderModel.updateOne(
-        { _id: order._id },
+    if (!isValid) {
+        throw new AppError("Invalid OTP", 400);
+    }
+
+    const updatedOrder = await this._orderModel.findOneAndUpdate(
         {
-            otpUsed: true,
-            status: OrderStatus.DELIVERED
-        }
+            _id: orderId,
+            otpUsed: false
+        },
+        {
+            $set: {
+                otpUsed: true,
+                status: OrderStatus.DELIVERED
+            }
+        },
+        { new: true }
     );
 
-    // تحرير الـ device
-    if (order.deviceId) {
+    if (!updatedOrder) {
+        throw new AppError("Order already processed", 400);
+    }
+
+    if (updatedOrder.deviceId) {
         await this._deviceModel.updateOne(
-            { _id: order.deviceId },
+            { _id: updatedOrder.deviceId },
             {
                 status: DeviceStatus.IDLE,
                 currentOrder: null
             }
         );
+
+        try {
+            mqttClient.publish(
+                `devices/${updatedOrder.deviceId}/commands`,
+                JSON.stringify({
+                    action: "OPEN_DOOR",
+                    orderId: updatedOrder._id
+                }),
+                { qos: 1 }
+            );
+        } catch (err) {
+            console.error("MQTT publish failed:", err);
+        }
     }
 
-    return res.status(200).json({ message: "Order completed" });
+    return res.status(200).json({
+        message: "Order completed successfully"
+    });
 };
     
 
