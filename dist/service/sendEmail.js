@@ -8,14 +8,11 @@ const nodemailer_1 = __importDefault(require("nodemailer"));
 const sendEmail = async (mailOptions) => {
     try {
         const transporter = nodemailer_1.default.createTransport({
-            host: "smtp.gmail.com",
-            port: 465,
-            secure: true,
+            service: "gmail",
             auth: {
                 user: process.env.EMAIL,
                 pass: process.env.EMAIL_PASSWORD,
             },
-            connectionTimeout: 10000,
         });
         const info = await transporter.sendMail({
             from: `"DelyX" <${process.env.EMAIL}>`,

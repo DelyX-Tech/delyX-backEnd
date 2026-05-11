@@ -1,18 +1,19 @@
 import nodemailer from "nodemailer";
-import Mail from "nodemailer/lib/mailer";
+import SMTPTransport from "nodemailer/lib/smtp-transport";
 
-export const sendEmail = async (mailOptions: Mail.Options) => {
+export const sendEmail = async (mailOptions: {
+    to: string | string[];
+    subject: string;
+    html: string;
+}) => {
     try {
         const transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com",
-            port: 465,
-            secure: true,
+            service: "gmail",
             auth: {
-                user: process.env.EMAIL,
-                pass: process.env.EMAIL_PASSWORD,
+                user: process.env.EMAIL!,
+                pass: process.env.EMAIL_PASSWORD!,
             },
-            connectionTimeout: 10000,
-        });
+        } as SMTPTransport.Options);
 
         const info = await transporter.sendMail({
             from: `"DelyX" <${process.env.EMAIL}>`,
