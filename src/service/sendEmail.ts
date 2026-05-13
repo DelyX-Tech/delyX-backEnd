@@ -1,40 +1,24 @@
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 
+import { Resend } from "resend";
+
 export const sendEmail = async (mailOptions: {
     to: string | string[];
     subject: string;
     html: string;
 }) => {
     try {
+        const resend = new Resend(process.env.RESEND_API_KEY);
 
-        const transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com",
-            port: 465,
-            secure: true,
-
-            auth: {
-                user: process.env.EMAIL!,
-                pass: process.env.EMAIL_PASSWORD!,
-            },
-
-            connectionTimeout: 10000,
-            greetingTimeout: 10000,
-            socketTimeout: 10000,
-
-        } as SMTPTransport.Options);
-
-        await transporter.verify();
-
-        console.log("SMTP connected");
-
-        const info = await transporter.sendMail({
-            from: `"DelyX" <${process.env.EMAIL}>`,
-            ...mailOptions,
+        const info = await resend.emails.send({
+            from: "DelyX <no-reply@mydely.online>",
+            to: mailOptions.to,
+            subject: mailOptions.subject,
+            html: mailOptions.html,
         });
 
-        console.log("Message sent:", info.messageId);
-
+        console.log("Message sent:", info.data?.id);
         return info;
 
     } catch (error) {

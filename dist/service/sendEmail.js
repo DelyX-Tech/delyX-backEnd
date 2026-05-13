@@ -9,8 +9,9 @@ const sendEmail = async (mailOptions) => {
     try {
         const transporter = nodemailer_1.default.createTransport({
             host: "smtp.gmail.com",
-            port: 465,
-            secure: true,
+            port: 587,
+            secure: false,
+            requireTLS: true,
             auth: {
                 user: process.env.EMAIL,
                 pass: process.env.EMAIL_PASSWORD,
@@ -26,15 +27,21 @@ const sendEmail = async (mailOptions) => {
             ...mailOptions,
         });
         console.log("Message sent:", info.messageId);
-        return info;
+        return {
+            success: true,
+            info
+        };
     }
     catch (error) {
         console.error("Email sending failed:", error);
-        throw error;
+        return {
+            success: false,
+            error
+        };
     }
 };
 exports.sendEmail = sendEmail;
 const GeneratOTP = () => {
-    return Math.floor(Math.random() * (999999 - 100000 + 1) + 100000);
+    return Math.floor(100000 + Math.random() * 900000);
 };
 exports.GeneratOTP = GeneratOTP;
