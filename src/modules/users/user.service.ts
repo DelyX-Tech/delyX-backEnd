@@ -76,7 +76,7 @@ class UserService {
             payload:{id:user._id,email:user.email},
             signature:user?.role==RoleType.user?process.env.REFRESH_TOKEN_USER!:process.env.REFRESH_TOKEN_ADMIN!,
             options:{expiresIn:"1y",jwtid}})
-        return res.status(200).json({message:"welcome",access_token,refresh_token})
+        return res.status(200).json({message:"welcome",access_token,refresh_token,role:user.role})
     }
 
     //=======================================================

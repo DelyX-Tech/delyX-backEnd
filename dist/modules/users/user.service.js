@@ -104,7 +104,7 @@ class UserService {
             signature: user?.role == user_model_1.RoleType.user ? process.env.REFRESH_TOKEN_USER : process.env.REFRESH_TOKEN_ADMIN,
             options: { expiresIn: "1y", jwtid }
         });
-        return res.status(200).json({ message: "welcome", access_token, refresh_token });
+        return res.status(200).json({ message: "welcome", access_token, refresh_token, role: user.role });
     };
     logout = async (req, res, next) => {
         const { flag } = req.body;
