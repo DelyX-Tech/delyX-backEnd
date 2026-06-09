@@ -14,6 +14,7 @@ import orderRouter from "./modules/oreders/order.controller"
 config({path:resolve("./config/.env")})
 config()
 const app :express.Application=express()
+app.set("trust proxy", 1) 
 const port:string|number =process.env.PORT||5000
 
 const limiter = rateLimit({
