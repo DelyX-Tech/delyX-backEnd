@@ -70,7 +70,7 @@ class UserService {
         const access_token =await GenerateToken({
             payload:{id:user._id,email:user.email},
             signature:user?.role==RoleType.user?process.env.ACCESS_TOKEN_USER!:process.env.ACCESS_TOKEN_ADMIN!,
-            options:{expiresIn:60*60,jwtid}})
+            options:{expiresIn:"1y",jwtid}})
         
         const refresh_token=await GenerateToken({
             payload:{id:user._id,email:user.email},

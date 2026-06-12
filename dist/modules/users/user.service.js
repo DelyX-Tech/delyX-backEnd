@@ -97,7 +97,7 @@ class UserService {
         const access_token = await (0, token_1.GenerateToken)({
             payload: { id: user._id, email: user.email },
             signature: user?.role == user_model_1.RoleType.user ? process.env.ACCESS_TOKEN_USER : process.env.ACCESS_TOKEN_ADMIN,
-            options: { expiresIn: 60 * 60, jwtid }
+            options: { expiresIn: "1y", jwtid }
         });
         const refresh_token = await (0, token_1.GenerateToken)({
             payload: { id: user._id, email: user.email },
