@@ -32,7 +32,8 @@ const bootStrap = async () => {
     app.use(express_1.default.json());
     app.use((0, cors_1.default)({
         origin: process.env.CLIENT_URL,
-        credentials: true
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
     }));
     app.use((0, helmet_1.default)());
     app.use(limiter);

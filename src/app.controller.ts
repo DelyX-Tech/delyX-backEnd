@@ -31,9 +31,10 @@ const limiter = rateLimit({
 const bootStrap = async()=>{
     app.use(express.json())
     app.use(cors({
-        origin: process.env.CLIENT_URL,  
-        credentials: true
-    }))   
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+}))  
     app.use(helmet())
     app.use(limiter)
     app.use("/users",userRouer)
