@@ -67,9 +67,9 @@ class OrderService {
         return res.status(200).json({ message: "Order dispatched" });
     };
     markDelivered = async (req, res) => {
-        const { orderId } = req.params;
+        const { deviceId } = req.params;
         const order = await this._orderModel.findOne({
-            _id: orderId,
+            _id: deviceId,
             status: enums_1.OrderStatus.OUT_FOR_DELIVERY
         });
         if (!order)

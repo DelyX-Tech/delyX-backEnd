@@ -94,10 +94,10 @@ class OrderService {
 };
     // =======================================================
     markDelivered = async (req: Request, res: Response) => {
-    const { orderId } = req.params;
+    const { deviceId } = req.params;
 
     const order = await this._orderModel.findOne({ 
-        _id: orderId, 
+        _id: deviceId, 
         status: OrderStatus.OUT_FOR_DELIVERY 
     });
 
