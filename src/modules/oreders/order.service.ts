@@ -236,20 +236,38 @@ const { orderId } = req.params;
 
 // =======================================================
     getOrders = async (req: Request, res: Response) => {
-        const orders = await this._orderModel.find({ 
-            filter: { userId: req.user?._id as Types.ObjectId }
-        });
-        return res.status(200).json({ orders });
-    };
+    const orders = await this._orderModel.find({
+        filter: {
+            userId: req.user?._id as Types.ObjectId
+        }
+    });
+
+    for (const order of orders) {
+        await order.populate("deviceId");
+    }
+
+    return res.status(200).json({
+        orders
+    });
+};
         
 
 // =======================================================
     getOrderById = async (req: Request, res: Response) => {
-        const { orderId } = req.params;
-        const order = await this._orderModel.findOne({ _id: orderId });
-        if (!order) throw new AppError("Order not found", 404);
-        return res.status(200).json({ order });
-    };
+    const { orderId } = req.params;
+
+    const order = await this._orderModel.findOne({ _id: orderId });
+
+    if (!order) {
+        throw new AppError("Order not found", 404);
+    }
+
+    await order.populate("deviceId");
+
+    return res.status(200).json({
+        order
+    });
+};
 }
 
 export default new OrderService();

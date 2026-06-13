@@ -158,16 +158,27 @@ class OrderService {
     };
     getOrders = async (req, res) => {
         const orders = await this._orderModel.find({
-            filter: { userId: req.user?._id }
+            filter: {
+                userId: req.user?._id
+            }
         });
-        return res.status(200).json({ orders });
+        for (const order of orders) {
+            await order.populate("deviceId");
+        }
+        return res.status(200).json({
+            orders
+        });
     };
     getOrderById = async (req, res) => {
         const { orderId } = req.params;
         const order = await this._orderModel.findOne({ _id: orderId });
-        if (!order)
+        if (!order) {
             throw new classError_1.AppError("Order not found", 404);
-        return res.status(200).json({ order });
+        }
+        await order.populate("deviceId");
+        return res.status(200).json({
+            order
+        });
     };
 }
 exports.default = new OrderService();
