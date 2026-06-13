@@ -44,10 +44,11 @@ class DeviceService {
         const device = await this._deviceModel.findOne({ _id: deviceId });
         if (!device)
             throw new classError_1.AppError("Device not found", 404);
+        const { _id, ...cleanDevice } = device.toObject();
         return res.status(200).json({
             device: {
-                ...device.toObject(),
-                deviceId: device._id
+                ...cleanDevice,
+                deviceId: _id
             }
         });
     };

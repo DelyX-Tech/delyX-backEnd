@@ -46,19 +46,21 @@ class DeviceService {
 
     // GET ONE
     getSingleDevice = async (req: Request, res: Response) => {
-        const { deviceId } = req.params;
-        
-        const device = await this._deviceModel.findOne({ _id: deviceId });
+    const { deviceId } = req.params;
 
-        if (!device) throw new AppError("Device not found", 404);
-        
-        return res.status(200).json({
-            device: {
-                ...device.toObject(),
-                deviceId: device._id
-            }
-        });
-    };
+    const device = await this._deviceModel.findOne({ _id: deviceId });
+
+    if (!device) throw new AppError("Device not found", 404);
+
+    const { _id, ...cleanDevice } = device.toObject();
+
+    return res.status(200).json({
+        device: {
+            ...cleanDevice,
+            deviceId: _id
+        }
+    });
+};
         
     // UPDATE STATUS
     updateStatus = async (req: Request, res: Response) => {
