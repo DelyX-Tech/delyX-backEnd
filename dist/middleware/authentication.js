@@ -6,6 +6,8 @@ const token_1 = require("../utils/token");
 const graphql_1 = require("graphql");
 const Authentication = (tokenType = token_1.TokenType.access) => {
     return async (req, res, next) => {
+        if (req.method === "OPTIONS")
+            return next();
         const { authorization } = req.headers;
         if (!authorization) {
             throw new classError_1.AppError("Authorization header is missing", 400);

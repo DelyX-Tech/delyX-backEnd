@@ -8,6 +8,7 @@ import { GraphQLError } from "graphql";
 
 export const Authentication = (tokenType:TokenType=TokenType.access)=>{
     return async(req:Request,res:Response,next:NextFunction)=>{
+        if (req.method === "OPTIONS") return next();
         const{authorization}=req.headers
         if (!authorization) {
             throw new AppError("Authorization header is missing", 400);
